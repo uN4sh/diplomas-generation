@@ -18,4 +18,4 @@ Generates named diplomas from a template and a GSheets table then sends it to th
 
 ```python
 $ pip install gspread configparser Pillow
-pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib```
+$ pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib```
