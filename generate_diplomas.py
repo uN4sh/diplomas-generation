@@ -1,4 +1,4 @@
-import gspread, configparser, os, datetime
+import gspread, os, datetime, yaml
 from PIL import Image
 from PIL import ImageFont
 from PIL import ImageDraw
@@ -38,22 +38,30 @@ def get_text_dimensions(text_string, font):
     return (text_width, text_height)
 
 
-def generate_image(nom, prenom):
-    """ Enregistre l'attestation avec le nom et prénom inscrit """ 
-    img = Image.open(diploma_template)
+def generate_image(specs, nom, prenom):
+    """ Enregistre l'attestation avec le nom et prénom inscrit """
+
+    img = Image.open(config['diploma_path'])
     draw = ImageDraw.Draw(img)
     nom = nom.upper()
     prenom = prenom.upper()
 
     txt = f'{prenom} {nom}'
-    font = ImageFont.truetype("NotoSerifCJK-Bold.ttc", 140)
+    frame = specs['frame_width']
+    fontsize = specs['fontsize']
 
-    # Calcul de la position du texte
-    w_max = 3508
-    txt_width = get_text_dimensions(txt, font)[0]
-    perfect = (w_max - txt_width) / 2 # - 20
+    # Check if text width exceeds the frame width
+    while True:
+        font = ImageFont.truetype(specs['font'], fontsize)
+        txt_width = get_text_dimensions(txt, font)[0]
+        if txt_width < frame:
+            break
+        fontsize -= 10
 
-    draw.text((perfect, 1500), txt, (255, 255, 255), font=font)
+    # Calculate text x position and draw text
+    w_max = specs['width']
+    perfect = (w_max - txt_width) / 2
+    draw.text((perfect, specs['text_ypos']), txt, (255, 255, 255), font=font)
 
     path = f'diplomas/{prenom}_{nom}.png'
     img.save(path)
@@ -66,12 +74,12 @@ def get_sheet_list():
     return sh.sheet1.get_all_records()
     
 
-def filtre_name_list():
+def filter_name_list(specs):
     """ Retourne la liste des noms / prénoms / email marqués comme à traiter """
     name_list = []
     for elem in sheet_list:
-        if elem[c_check] == checkmark:
-            current = [elem[c_nom], elem[c_prenom], elem[c_email], sheet_list.index(elem)+2]
+        if elem[specs['_check']] == specs['checkmark']:
+            current = [elem[specs['_nom']], elem[specs['_prenom']], elem[specs['_email']], sheet_list.index(elem)+2]
             name_list.append(current)
 
     return name_list
@@ -79,54 +87,42 @@ def filtre_name_list():
 
 def mark_as_done(row):
     """ Marque la ligne donnée comme traitée """
-    sh.sheet1.update(f'G{row[3]}', "sent")
-    # for e in sheet_list:
-    #     if e[c_nom] == row[0] and e[c_prenom] == row[1]:
-    #         e[c_check] = 'Mail envoyé'
-    #         break
+    sh.sheet1.update(f'G{row[3]}', "Attestation envoyée !")
 
 
 # Début du programme
-config = configparser.ConfigParser()
-config.read('config.ini')
+if __name__=='__main__':
+    # Read config file
+    with open("config.yaml", "r") as rf:
+        config = (yaml.load(rf, Loader=yaml.Loader))
 
-diploma_template = config['Mail']['diploma_template_path']
+    # Connect to Sheets API & open file 
+    gc = gspread.service_account(filename=config['Sheets']['credential_path'])
+    sh = gc.open(config['Sheets']['file_name'])
 
-c_nom = config['SheetsAPI']['colonne_nom']
-c_prenom = config['SheetsAPI']['colonne_prenom']
-c_email = config['SheetsAPI']['colonne_email']
-c_check = config['SheetsAPI']['colonne_check']
-checkmark = config['SheetsAPI']['checkmark']
+    sheet_list = get_sheet_list()
+    name_list = filter_name_list(config['Sheet_specs'])
 
-sheets_api_credential_json_path = config['SheetsAPI']['sheets_api_credential_json_path']
-sheets_file_name = config['SheetsAPI']['sheets_file_name']
+    d = str(datetime.datetime.now().replace(microsecond=0))
+    print(f"Exécution du programme - {d}\n{len(sheet_list)} lignes au total sur le GSheets\n{len(name_list)} lignes marquées comme à traiter\n")
 
+    if not os.path.exists('diplomas'):
+        os.mkdir('diplomas')
+    if not os.path.exists('logs'):
+        os.mkdir('logs')
 
-# Connect to Sheets API & open file 
-gc = gspread.service_account(filename=sheets_api_credential_json_path)
-sh = gc.open(sheets_file_name)
+    success = []
+    fails = []
+    for name in name_list:
+        try:
+            name.append(generate_image(config['Diploma_specs'], name[0], name[1]))
+            send_email(name)
+            
+            mark_as_done(name)
+            success.append(name)
+        except Exception as e:
+            print(e)
+            fails.append(name)
 
-sheet_list = get_sheet_list()
-name_list = filtre_name_list()
-d = str(datetime.datetime.now().replace(microsecond=0))
-print(f"Exécution du programme - {d}\n{len(sheet_list)} lignes au total sur le GSheets\n{len(name_list)} lignes marquées comme à traiter\n")
-
-if not os.path.exists('diplomas'):
-    os.mkdir('diplomas')
-if not os.path.exists('logs'):
-    os.mkdir('logs')
-
-success = []
-fails = []
-for name in name_list:
-    try:
-        name.append(generate_image(name[0], name[1]))
-        send_email(name)
-        
-        mark_as_done(name)
-        success.append(name)
-    except Exception as e:
-        print(e)
-        fails.append(name)
-
-generate_report(success, fails)
+    generate_report(success, fails)
+    print("Fin de l'exécution, le fichier `logs/log_{d}.log` a été généré.")
