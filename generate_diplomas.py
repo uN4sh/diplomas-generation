@@ -41,7 +41,7 @@ def get_text_dimensions(text_string, font):
 def generate_image(specs, nom, prenom):
     """ Enregistre l'attestation avec le nom et prénom inscrit """
 
-    img = Image.open(config['diploma_path'])
+    img = Image.open(specs['diploma_path'])
     draw = ImageDraw.Draw(img)
     nom = nom.upper()
     prenom = prenom.upper()

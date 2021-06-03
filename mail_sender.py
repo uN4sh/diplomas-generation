@@ -1,5 +1,5 @@
 from __future__ import print_function
-import os.path, base64, configparser, mimetypes
+import os.path, base64, mimetypes, yaml
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -9,12 +9,13 @@ from email.mime.image import MIMEImage
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 
-config = configparser.ConfigParser()
-config.read('config.ini')
-credentials_path = config['GmailAPI']['gmail_api_credential_json_path']
-SENDER = config['GmailAPI']['sender']
-SUBJECT = config['GmailAPI']['subject']
-with open(config['GmailAPI']['message_html_path']) as f:
+with open("config.yaml", "r") as rf:
+    config = (yaml.load(rf, Loader=yaml.Loader))
+
+credentials_path = config['GMail']['credential_path']
+SENDER = config['GMail']['sender']
+SUBJECT = config['GMail']['subject']
+with open(config['GMail']['message_html_path']) as f:
 	CORPS = " ".join([l.rstrip() for l in f]) 
 SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 
@@ -88,6 +89,6 @@ def send_email(row):
     service = build('gmail', 'v1', credentials=creds)
     
     ms = create_message_with_attachment(
-        email, ''.join(CORPS).format(prenom, nom), path)
+        email, ''.join(CORPS).format(prenom), path)
     m = send_message(service, 'me', ms)
     print(f' > Done: {prenom} {nom} ({m["id"]} sent)\n')

@@ -1,0 +1,34 @@
+
+# Relatif aux noms de colonnes Sheets
+Sheet_specs: {
+  _nom: "Nom",
+  _prenom: "Prénom",
+  _email: "Adresse mail :",
+  _check: "Check",
+  checkmark: "y"
+}
+
+# Relatif aux dimensions d'image et à l'écriture du Nom
+Diploma_specs: {
+  diploma_path: "diploma.png",
+  width: 3508,
+  frame_width: 3108,
+  text_ypos: 1500,
+  font: "NotoSerifCJK-Bold.ttc",
+  fontsize: 150
+
+}
+
+# Relatif à l'API GSheets
+Sheets: {
+  credential_path: "sheets-credentials.json",
+  file_name: "tmp_mn"
+}
+
+# Relatif aux options de l'API GMail
+GMail: {
+  credential_path: "gmail-credentials.json",
+  sender: "Jean Mahmoud <jean.mahmoud@gmail.com>",
+  subject: "Your diploma!",
+  html_path: "message_text.html" # Chemin d'accès vers le contenu HTML du mail
+}
