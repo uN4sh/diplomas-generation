@@ -5,17 +5,18 @@ Generates named diplomas from a template and a GSheets table then sends it to th
 
 - Get your Sheets API Credential JSON file [from here](https://gspread.readthedocs.io/en/latest/)
 - Get your Mail API Credential JSON file and enable the Gmail API [from here](https://developers.google.com/gmail/api/quickstart/python)
-- Complete `config.ini` file with your Sheets and Gmail data
+- Complete `config.yaml` file with your Sheets and Gmail data and specifications
 - Edit `message_text.html` to edit your mail message
 - Run the python `generate_diplomas.py` file
 
 ### Required modules
-- `configparser` to parse .ini files
+- `pyyaml` to parse .yaml files
 - `PIL` for the image processing
 - `Google Sheets API` and `gspread` to deal with the Sheet
 - `Google Mail API` to send e-mails to students
 
 
 ```python
-$ pip install gspread configparser Pillow
-$ pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib```
+$ pip install gspread pyyaml Pillow
+$ pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib
+```
