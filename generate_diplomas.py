@@ -125,4 +125,4 @@ if __name__=='__main__':
             fails.append(name)
 
     generate_report(success, fails)
-    print("Fin de l'exécution, le fichier `logs/log_{d}.log` a été généré.")
+    print(f"Fin de l'exécution, le fichier `logs/log_{d}.log` a été généré.")

@@ -15,7 +15,7 @@ with open("config.yaml", "r") as rf:
 credentials_path = config['GMail']['credential_path']
 SENDER = config['GMail']['sender']
 SUBJECT = config['GMail']['subject']
-with open(config['GMail']['message_html_path']) as f:
+with open(config['GMail']['html_path']) as f:
 	CORPS = " ".join([l.rstrip() for l in f]) 
 SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 
