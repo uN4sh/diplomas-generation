@@ -10,25 +10,25 @@ Sheet_specs: {
 
 # Relatif aux dimensions d'image et à l'écriture du Nom
 Diploma_specs: {
-  diploma_path: "diploma.png",
+  diploma_path: "attestation_achmawiya.png",
   width: 3508,
   frame_width: 3108,
-  text_ypos: 1500,
-  font: "NotoSerifCJK-Bold.ttc",
-  fontsize: 150
-
+  text_ypos: 1250,
+  font: "Arial_Black.ttf",
+  color: "#000000",
+  fontsize: 180
 }
 
 # Relatif à l'API GSheets
 Sheets: {
   credential_path: "sheets-credentials.json",
-  file_name: "tmp_mn"
+  file_name: "D.U.Q - Al-'Ashmawiyya -  Attestation (réponses)"
 }
 
 # Relatif aux options de l'API GMail
 GMail: {
   credential_path: "gmail-credentials.json",
   sender: "Jean Mahmoud <jean.mahmoud@gmail.com>",
-  subject: "Your diploma!",
-  html_path: "message_text.html" # Chemin d'accès vers le contenu HTML du mail
+  subject: "Attestation de participation « Al-Ashmawiyya dans le Fiqh Malikite »",
+  html_path: "html/ashmawiya-mail.html" # Chemin d'accès vers le contenu HTML du mail
 }

@@ -9,7 +9,7 @@ def log(l):
     with open(f'logs/log_{d}.log', 'a') as wf:
         wf.write(l)
 
-def generate_report(success, fails):
+def generate_report(sheet_list, name_list, success, fails):
     """ Génère le rapport d'exécution """
 
     log(f"Rapport d'exécution - {d}\n\n{len(sheet_list)} lignes au total sur le GSheets\n{len(name_list)} lignes marquées comme à traiter\n{len(success)} mails envoyés avec succès\n{len(fails)} échecs lors de l'envoi\n\n")
@@ -49,6 +49,7 @@ def generate_image(specs, nom, prenom):
     txt = f'{prenom} {nom}'
     frame = specs['frame_width']
     fontsize = specs['fontsize']
+    color = specs['color']
 
     # Check if text width exceeds the frame width
     while True:
@@ -60,8 +61,8 @@ def generate_image(specs, nom, prenom):
 
     # Calculate text x position and draw text
     w_max = specs['width']
-    perfect = (w_max - txt_width) / 2
-    draw.text((perfect, specs['text_ypos']), txt, (255, 255, 255), font=font)
+    perfect = ((w_max - txt_width) / 2) + 30
+    draw.text((perfect, specs['text_ypos']), txt, color, font=font)
 
     path = f'diplomas/{prenom}_{nom}.png'
     img.save(path)
@@ -69,12 +70,7 @@ def generate_image(specs, nom, prenom):
     return path
 
 
-def get_sheet_list():
-    """ Retourne l'ensemble des lignes du GSheets """
-    return sh.sheet1.get_all_records()
-    
-
-def filter_name_list(specs):
+def filter_name_list(sheet_list, specs):
     """ Retourne la liste des noms / prénoms / email marqués comme à traiter """
     name_list = []
     for elem in sheet_list:
@@ -85,13 +81,24 @@ def filter_name_list(specs):
     return name_list
 
 
-def mark_as_done(row):
+def mark_as_done(sh, row):
     """ Marque la ligne donnée comme traitée """
+    # TODO: remplacer G par la bonne colonne automatiquement
     sh.sheet1.update(f'G{row[3]}', "Attestation envoyée !")
 
 
-# Début du programme
-if __name__=='__main__':
+def get_lists(sh, config):
+    sheet_list = sh.sheet1.get_all_records()
+    name_list = filter_name_list(sheet_list, config['Sheet_specs'])
+    return sheet_list, name_list
+
+
+def test_sheets_specs():
+    print('test_sheets_specs')
+    return -1
+
+def generation():
+    
     # Read config file
     with open("config.yaml", "r") as rf:
         config = (yaml.load(rf, Loader=yaml.Loader))
@@ -100,10 +107,8 @@ if __name__=='__main__':
     gc = gspread.service_account(filename=config['Sheets']['credential_path'])
     sh = gc.open(config['Sheets']['file_name'])
 
-    sheet_list = get_sheet_list()
-    name_list = filter_name_list(config['Sheet_specs'])
-
-    d = str(datetime.datetime.now().replace(microsecond=0))
+    sheet_list, name_list = get_lists(sh, config)
+    
     print(f"Exécution du programme - {d}\n{len(sheet_list)} lignes au total sur le GSheets\n{len(name_list)} lignes marquées comme à traiter\n")
 
     if not os.path.exists('diplomas'):
@@ -111,18 +116,29 @@ if __name__=='__main__':
     if not os.path.exists('logs'):
         os.mkdir('logs')
 
-    success = []
-    fails = []
-    for name in name_list:
-        try:
-            name.append(generate_image(config['Diploma_specs'], name[0], name[1]))
-            send_email(name)
-            
-            mark_as_done(name)
-            success.append(name)
-        except Exception as e:
-            print(e)
-            fails.append(name)
 
-    generate_report(success, fails)
-    print(f"Fin de l'exécution, le fichier `logs/log_{d}.log` a été généré.")
+    mode = input("Exécuter un mode test ? (Y/n) : ")
+    
+    if mode == 'Y':
+        print('Lancement du mode test sur la première ligne du Sheets')
+        name = name_list[0]
+        generate_image(config['Diploma_specs'], name[0], name[1])
+    else:
+        success = []
+        fails = []
+        for name in name_list:
+            try:
+                name.append(generate_image(config['Diploma_specs'], name[0], name[1]))
+                send_email(name)
+                
+                mark_as_done(sh, name)
+                success.append(name)
+            except Exception as e:
+                print(e)
+                fails.append(name)
+
+        generate_report(sheet_list, name_list, success, fails)
+        print(f"Fin de l'exécution, le fichier `logs/log_{d}.log` a été généré.")
+
+d = str(datetime.datetime.now().replace(microsecond=0))
+generation()
